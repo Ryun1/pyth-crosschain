@@ -134,18 +134,20 @@ parser.command(
       spendingScript.hash.hash,
     );
     const stateToken = mintingScript.asset(
-      Cardano.AssetName.fromBytes(Buffer.from("state", "utf-8")),
+      Cardano.AssetName.fromBytes(Buffer.from("Pyth State", "utf-8")),
       1n,
     );
     const ownerToken = mintingScript.asset(
-      Cardano.AssetName.fromBytes(Buffer.from("owner", "utf-8")),
+      Cardano.AssetName.fromBytes(Buffer.from("Pyth Ops", "utf-8")),
       1n,
     );
-    const stateOutput = spendingScript.receive(stateToken, {
-      set: [Buffer.from("58cc3ae5c097b213ce3c81979e1b9f9570746aa5", "hex")],
-      set_index: 0n,
-    });
-
+    const stateOutput = spendingScript.receive(
+      Cardano.Assets.merge(stateToken, Cardano.Assets.fromLovelace(25_000_000n)),
+      {
+        set_index: 0n,
+        set: [Buffer.from("58cc3ae5c097b213ce3c81979e1b9f9570746aa5", "hex")],
+      },
+    );
     const tx = await client
       .newTx()
       .collectFrom({ inputs: [origin] })
@@ -156,11 +158,14 @@ parser.command(
       .payToAddress(stateOutput)
       .payToAddress({
         address: await client.address(),
-        assets: ownerToken,
+        assets: Cardano.Assets.merge(
+          ownerToken,
+          Cardano.Assets.fromLovelace(2_000_000n),
+        ),
       })
       .buildEither({ debug: true });
 
-    const digest = Either.getOrThrowWith(tx, (e) => {
+    const digest = await Either.getOrThrowWith(tx, (e) => {
       throw JSON.stringify(e, undefined, 2);
     }).signAndSubmit();
 
