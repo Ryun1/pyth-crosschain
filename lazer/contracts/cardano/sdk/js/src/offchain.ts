@@ -46,7 +46,7 @@ export const List_secp256k1PublicKeyAddress_ = TSchema.Array(Secp256k1PublicKeyA
 /**
  * Never
  */
-export const Never = TSchema.Literal("Never" as const)
+export const Never = TSchema.Literal("Never" as const, { index: 1 })
 
 /**
  * ScriptHash

@@ -142,10 +142,13 @@ parser.command(
       Cardano.AssetName.fromBytes(Buffer.from("owner", "utf-8")),
       1n,
     );
-    const stateOutput = spendingScript.receive(stateToken, {
-      set_index: 0n,
-      set: [Buffer.from("58cc3ae5c097b213ce3c81979e1b9f9570746aa5", "hex")],
-    });
+    const stateOutput = spendingScript.receive(
+      Cardano.Assets.merge(stateToken, Cardano.Assets.fromLovelace(25_000_000n)),
+      {
+        set_index: 0n,
+        set: [Buffer.from("58cc3ae5c097b213ce3c81979e1b9f9570746aa5", "hex")],
+      },
+    );
 
     const tx = await client
       .newTx()
@@ -157,15 +160,18 @@ parser.command(
       .payToAddress(stateOutput)
       .payToAddress({
         address: await client.address(),
-        assets: ownerToken,
+        assets: Cardano.Assets.merge(
+          ownerToken,
+          Cardano.Assets.fromLovelace(2_000_000n),
+        ),
       })
       .buildEither({ debug: true });
 
-    const digest = Either.getOrThrowWith(tx, (e) => {
+    const digest = await Either.getOrThrowWith(tx, (e) => {
       throw JSON.stringify(e, undefined, 2);
     }).signAndSubmit();
 
-    console.log("Digest: ", digest);
+    console.log("Digest:", digest);
   },
 );
 

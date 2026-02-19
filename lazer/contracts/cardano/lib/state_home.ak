@@ -43,7 +43,8 @@ pub fn mint(
   self: Transaction,
   with: fn(Data) -> Bool,
 ) -> Bool {
-  when assets.quantity_of(self.mint, id, state_nft) is {
+  let qty = assets.quantity_of(self.mint, id, state_nft)
+  when qty is {
     1 -> mint_state(origin, home, id, self, with)
     -1 -> burn_state(id, self)
     _ -> fail @"invalid home state NFT quantity"
