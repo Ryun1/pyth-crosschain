@@ -10,6 +10,7 @@ import type { Data, ScriptHash, UTxO } from "@evolution-sdk/evolution";
 import {
   Address,
   Bytes,
+  CBOR,
   Cardano,
   InlineDatum,
   PolicyId,
@@ -70,6 +71,21 @@ function applyParamsWithSchemasToScript<Params extends readonly any[]>(
   return UPLC.applyParamsToScript(compiledCode, datas);
 }
 
+/**
+ * Normalize a compiled Plutus script hex string to single-CBOR encoded bytes
+ * (`CBOR_bytes(FLAT)`), which is what `PlutusV3.bytes` expects.
+ *
+ * - Aiken blueprint `compiledCode`: single-CBOR → use as-is
+ * - After `UPLC.applyParamsToScript`: double-CBOR → strip one layer
+ */
+function scriptBytesFromHex(hex: string): Uint8Array {
+  if (UPLC.getCborEncodingLevel(hex) === "double") {
+    return CBOR.fromCBORHex(hex);
+  }
+  return Bytes.fromHex(hex);
+}
+
+
 export type Script = {
   script: Cardano.Script.Script;
   hash: ScriptHash.ScriptHash;
@@ -104,7 +120,7 @@ abstract class Validator<Params extends readonly any[], Redeemer> {
         )
       : this.blueprint.compiledCode;
     const script = new Cardano.PlutusV3.PlutusV3({
-      bytes: Bytes.fromHex(compiledCode),
+      bytes: scriptBytesFromHex(compiledCode),
     });
     return {
       hash: Cardano.ScriptHash.fromScript(script),
